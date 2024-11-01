@@ -1,4 +1,5 @@
 import sys
+import math
 from collections import defaultdict
 
 class TargetClass:
@@ -75,6 +76,70 @@ class TargetClass:
         sorted_ext = sorted(ext_dict.keys(), key=lambda x: (-len(ext_dict[x]), x))
         sorted_files = [file for ext in sorted_ext for file in sorted(ext_dict[ext], key=str.lower)]
         return ", ".join(sorted_files)
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def distance(self, other_point):
+        return math.sqrt((self.x - other_point.x) ** 2 + (self.y - other_point.y) ** 2)
+class Line:
+    def __init__(self, a=None, b=None, c=None, p1=None, p2=None, point=None, vector=None):
+        if a is not None and b is not None and c is not None:
+            self.a = a
+            self.b = b
+            self.c = c
+        elif p1 and p2:
+            self.a = p2.y - p1.y
+            self.b = p1.x - p2.x
+            self.c = -self.a * p1.x - self.b * p1.y
+        elif point and vector:
+            self.a = vector.y
+            self.b = -vector.x
+            self.c = -self.a * point.x - self.b * point.y
+        else:
+            raise ValueError("Can't create a straight line from given arguments.")
+
+    def __eq__(self, other):
+        if not isinstance(other, Line):
+            return False
+        return (math.isclose(self.a * other.b, self.b * other.a) and
+                math.isclose(self.b * other.c, self.c * other.b) and
+                math.isclose(self.a * other.c, self.c * other.a))
+class Vector:
+    def __init__(self, x=None, y=None, p1=None, p2=None, line=None):
+        if x is not None and y is not None:
+            self.x = x
+            self.y = y
+        elif p1 and p2:
+            self.x = p2.x - p1.x
+            self.y = p2.y - p1.y
+        elif line:
+            self.x = -line.b
+            self.y = line.a
+        else:
+            raise ValueError("Can't create a vector from given arguments.")
+
+    def __add__(self, other):
+        return Vector(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Vector(self.x - other.x, self.y - other.y)
+
+    def multiply_vectors(self, other):
+        z = self.x * other.y - self.y * other.x
+        return Vector3D(0, 0, z)
+
+    def __eq__(self, other):
+        return math.isclose(self.x, other.x) and math.isclose(self.y, other.y)
+
+class Vector3D(Vector):
+    def __init__(self, x, y, z):
+        super().__init__(x, y)
+        self.z = z
+
+    def __eq__(self, other):
+        return math.isclose(self.x, other.x) and math.isclose(self.y, other.y) and math.isclose(self.z, other.z)
     
 def main():
     from PyQt6.QtWidgets import QApplication, QLabel, QWidget

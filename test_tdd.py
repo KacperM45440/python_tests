@@ -1,6 +1,6 @@
 import pytest
 import math
-from test_me import Point, Line, Vector, Vector3D
+from test_me import Point, Line, Vector, Vector3D, Plane
 
 class TestClass:
     @pytest.fixture(scope="class")
@@ -15,6 +15,9 @@ class TestClass:
     @pytest.fixture(scope="class")
     def vector3d(self):
         return Vector3D(0,0,0)
+    @pytest.fixture(scope="class")
+    def plane(self):
+        return Plane(0,0,0,0)
 
     @pytest.mark.parametrize("p1_x, p1_y, p2_x, p2_y, expected_outcome",
                              [
@@ -168,3 +171,60 @@ class TestClass:
         v3 = v1.multiply_vectors(v2)
         assert isinstance(v3, Vector3D)
         assert v3.z == expected_z
+
+    @pytest.mark.parametrize("a, b, c, d, expected_a, expected_b, expected_c, expected_d",
+                             [
+                                (1, -2, 3, -4, 1, -2, 3, -4),
+                                (0, 1, -1, 5, 0, 1, -1, -5),
+                                (2, 0, 4, -3, 2, 0, 4, -3),
+                                (-1, -1, -1, 0, -1, -1, -1, -6),
+                                (3, 4, 5, -6, 3, 4, 5, -6),
+                                ])
+    def test_plane_from_parameters(self, a, b, c, d, expected_a, expected_b, expected_c, expected_d):
+        plane = Plane(a=a, b=b, c=c, d=d)
+        assert plane.a == expected_a
+        assert plane.b == expected_b
+        assert plane.c == expected_c
+        assert plane.d == expected_d
+
+    @pytest.mark.parametrize("point, vector, expected_a, expected_b, expected_c, expected_d",
+                             [
+                                (Point(1, 0, 0), Vector3D(1, 0, 0), 1, 0, 0, -1),
+                                (Point(0, 1, 0), Vector3D(0, 1, 0), 0, 1, 0, -1),
+                                (Point(0, 0, 1), Vector3D(0, 0, 1), 0, 0, 1, -1),
+                                (Point(1, 1, 1), Vector3D(1, 1, 1), 1, 1, 1, -1),
+                                (Point(0, 0, 0), Vector3D(3, 4, 5), 3, 4, 5, -1),
+                                ])
+    def test_plane_from_point_and_vector(self, point, vector, expected_a, expected_b, expected_c, expected_d):
+        plane = Plane(point=point, vector=vector)
+        assert plane.a == expected_a
+        assert plane.b == expected_b
+        assert plane.c == expected_c
+        assert plane.d == expected_d
+
+    @pytest.mark.parametrize("p1, p2, p3, expected_a, expected_b, expected_c, expected_d",
+                             [
+                                (Point(1, 0, 0), Point(0, 1, 0), Point(0, 0, 1), 1, 1, 1, -1),
+                                (Point(1, 1, 1), Point(2, 3, 4), Point(5, 6, 7), -3, 6, -3, 0),
+                                (Point(0, 0, 0), Point(1, 1, 1), Point(1, -1, 1), -2, 0, 2, 0),
+                                (Point(1, 1, 0), Point(1, -1, 0), Point(0, 0, 1), 0, 0, -2, 1),
+                                (Point(0, 0, 0), Point(1, 0, 0), Point(0, 1, 0), 0, 0, 1, 0),
+                                ])
+    def test_plane_from_three_points(self, p1, p2, p3, expected_a, expected_b, expected_c, expected_d):
+        plane = Plane(p1=p1, p2=p2, p3=p3)
+        assert plane.a == expected_a
+        assert plane.b == expected_b
+        assert plane.c == expected_c
+        assert plane.d == expected_d
+
+    @pytest.mark.parametrize("plane, point, expected_distance",
+                             [
+                                (Plane(1, 0, 0, -1), Point(2, 0, 0), 1),
+                                (Plane(0, 1, 0, -2), Point(0, 3, 0), 1),
+                                (Plane(0, 0, 1, -3), Point(0, 0, 4), 1),
+                                (Plane(1, 1, 1, -3), Point(1, 1, 1), 1),
+                                (Plane(2, 2, 2, -6), Point(1, 1, 1), 1),
+                                ])
+    def test_distance_to_point(self, plane, point, expected_distance):
+        distance = plane.distance_to_point(point)
+        assert math.isclose(distance, expected_distance, rel_tol=1e-6)

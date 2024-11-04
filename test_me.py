@@ -77,12 +77,14 @@ class TargetClass:
         sorted_files = [file for ext in sorted_ext for file in sorted(ext_dict[ext], key=str.lower)]
         return ", ".join(sorted_files)
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x, y, z=0):
         self.x = x
         self.y = y
+        self.z = z
 
     def distance(self, other_point):
-        return math.sqrt((self.x - other_point.x) ** 2 + (self.y - other_point.y) ** 2)
+        return math.sqrt((self.x - other_point.x) ** 2 + (self.y - other_point.y) ** 2 + (self.z - other_point.z) ** 2)
+
 class Line:
     def __init__(self, a=None, b=None, c=None, p1=None, p2=None, point=None, vector=None):
         if a is not None and b is not None and c is not None:
@@ -140,6 +142,34 @@ class Vector3D(Vector):
 
     def __eq__(self, other):
         return math.isclose(self.x, other.x) and math.isclose(self.y, other.y) and math.isclose(self.z, other.z)
+
+class Plane:
+    def __init__(self, a=None, b=None, c=None, d=None, point=None, vector=None, p1=None, p2=None, p3=None):
+        if a is not None and b is not None and c is not None and d is not None:
+            self.a = a
+            self.b = b
+            self.c = c
+            self.d = d
+        elif point and vector:
+            self.a = vector.x
+            self.b = vector.y
+            self.c = vector.z
+            self.d = -(self.a * point.x + self.b * point.y + self.c * point.z)
+        elif p1 and p2 and p3:
+            v1 = Vector3D(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z)
+            v2 = Vector3D(p3.x - p1.x, p3.y - p1.y, p3.z - p1.z)
+            normal_vector = v1.multiply_vectors(v2)
+            self.a = normal_vector.x
+            self.b = normal_vector.y
+            self.c = normal_vector.z
+            self.d = -(self.a * p1.x + self.b * p1.y + self.c * p1.z)
+        else:
+            raise ValueError("Can't create a plane from given arguments.")
+
+    def distance_to_point(self, point):
+        numerator = abs(self.a * point.x + self.b * point.y + self.c * point.z + self.d)
+        denominator = math.sqrt(self.a**2 + self.b**2 + self.c**2)
+        return numerator / denominator
     
 def main():
     from PyQt6.QtWidgets import QApplication, QLabel, QWidget

@@ -1,6 +1,11 @@
 import sys
 import math
 from collections import defaultdict
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
+from PyQt6.QtCore import *
+from PyQt6 import QtGui, QtCore
+from PyQt6.QtGui import QCursor
 
 class TargetClass:
     def add_values(self, x, y):
@@ -84,7 +89,6 @@ class Point:
 
     def distance(self, other_point):
         return math.sqrt((self.x - other_point.x) ** 2 + (self.y - other_point.y) ** 2 + (self.z - other_point.z) ** 2)
-
 class Line:
     def __init__(self, a=None, b=None, c=None, p1=None, p2=None, point=None, vector=None):
         if a is not None and b is not None and c is not None:
@@ -134,7 +138,6 @@ class Vector:
 
     def __eq__(self, other):
         return math.isclose(self.x, other.x) and math.isclose(self.y, other.y)
-
 class Vector3D(Vector):
     def __init__(self, x, y, z):
         super().__init__(x, y)
@@ -142,7 +145,6 @@ class Vector3D(Vector):
 
     def __eq__(self, other):
         return math.isclose(self.x, other.x) and math.isclose(self.y, other.y) and math.isclose(self.z, other.z)
-
 class Plane:
     def __init__(self, a=None, b=None, c=None, d=None, point=None, vector=None, p1=None, p2=None, p3=None):
         if a is not None and b is not None and c is not None and d is not None:
@@ -172,16 +174,75 @@ class Plane:
         return numerator / denominator
     
 def main():
-    from PyQt6.QtWidgets import QApplication, QLabel, QWidget
-    app = QApplication([])
-
+    app = QApplication(sys.argv)
     window = QWidget()
-    window.setWindowTitle("Test test app for testing")
-    window.setGeometry(100, 100, 600, 80)
-    helloMsg = QLabel("<h1>Your program didn't crash. Congratulations!</h1>", parent=window)
-    helloMsg.move(45, 15)
+    window.setWindowTitle("Computer Info Box")
+
+    window.move(500, 200)
+    window.setStyleSheet(
+        "background-color: #CEDEFF;"
+    )
+    grid = QGridLayout()
+
+    ### Text box
+    groupBoxText = QGroupBox("Output")
+    groupBoxText.setStyleSheet(
+                     'QGroupBox {'
+                     'border: 1px solid #F75A85;'
+                     'margin-top: 10px; }'
+                     
+                     'QGroupBox:title {'
+                     'subcontrol-origin: margin;'
+                     'subcontrol-position: top center;'
+                     'padding-left: 7px;'
+                     'padding-right: 7px; }'
+                     )
+    textEdit = QTextEdit()
+    textEdit.setStyleSheet(
+                    'QTextEdit {'
+                    'border: 0;}'
+                    )
+    textEdit.setReadOnly(True)
+    groupText = QVBoxLayout()
+    groupText.addWidget(textEdit)
+    groupBoxText.setLayout(groupText)
+
+    ### Button box
+    groupBoxButtons = QGroupBox("Actions")
+    groupBoxButtons.setStyleSheet(
+                     'QGroupBox {'
+                     'border: 1px solid #F75A85;'
+                     'margin-top: 10px; }'
+                     
+                     'QGroupBox:title {'
+                     'subcontrol-origin: margin;'
+                     'subcontrol-position: top center;'
+                     'padding-left: 7px;'
+                     'padding-right: 7px; }'
+                     )
+    pushButton1 = QPushButton("IPv4")
+    pushButton2 = QPushButton("Proxy")
+    pushButton3 = QPushButton("OS + Hardware")
+    pushButton4 = QPushButton("BIOS version")
+    pushButton5 = QPushButton("Hostname")
+
+    groupButtons = QVBoxLayout()
+    groupButtons.addWidget(pushButton1)
+    groupButtons.addWidget(pushButton2)
+    groupButtons.addWidget(pushButton3)
+    groupButtons.addWidget(pushButton4)
+    groupButtons.addWidget(pushButton5)
+    groupBoxButtons.setLayout(groupButtons)
+
+    ### Set layout
+    table = QTableWidget()
+    table.setRowCount(3)
+    table.setColumnCount(3)
+    grid.addWidget(groupBoxButtons, 1, 1)
+    grid.addWidget(groupBoxText, 1, 0)
 
     window.show()
+    window.setLayout(grid)
     sys.exit(app.exec())
     
 if __name__ == "__main__":

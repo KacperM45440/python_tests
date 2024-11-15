@@ -1,5 +1,14 @@
+import os
+import re
 import sys
 import math
+import subprocess
+import platform
+import socket
+import requests
+import multiprocessing
+import psutil
+
 from collections import defaultdict
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
@@ -184,6 +193,13 @@ def main():
     )
     grid = QGridLayout()
 
+    sys._excepthook = sys.excepthook 
+    def exception_hook(exctype, value, traceback):
+        print(exctype, value, traceback)
+        sys._excepthook(exctype, value, traceback) 
+        sys.exit(1) 
+    sys.excepthook = exception_hook 
+
     ### Text box
     groupBoxText = QGroupBox("Output")
     groupBoxText.setStyleSheet(
@@ -197,14 +213,14 @@ def main():
                      'padding-left: 7px;'
                      'padding-right: 7px; }'
                      )
-    textEdit = QTextEdit()
-    textEdit.setStyleSheet(
+    window.textEdit = QTextEdit()  
+    window.textEdit.setStyleSheet(
                     'QTextEdit {'
                     'border: 0;}'
                     )
-    textEdit.setReadOnly(True)
+    window.textEdit.setReadOnly(True)
     groupText = QVBoxLayout()
-    groupText.addWidget(textEdit)
+    groupText.addWidget(window.textEdit)
     groupBoxText.setLayout(groupText)
 
     ### Button box
@@ -221,10 +237,15 @@ def main():
                      'padding-right: 7px; }'
                      )
     pushButton1 = QPushButton("IPv4")
+    pushButton1.pressed.connect(lambda: button1_action(window))
     pushButton2 = QPushButton("Proxy")
+    pushButton2.pressed.connect(lambda: button2_action(window))
     pushButton3 = QPushButton("OS + Hardware")
+    pushButton3.pressed.connect(lambda: button3_action(window))
     pushButton4 = QPushButton("BIOS version")
+    pushButton4.pressed.connect(lambda: button4_action(window))
     pushButton5 = QPushButton("Hostname")
+    pushButton5.pressed.connect(lambda: button5_action(window))
 
     groupButtons = QVBoxLayout()
     groupButtons.addWidget(pushButton1)
@@ -244,7 +265,75 @@ def main():
     window.show()
     window.setLayout(grid)
     sys.exit(app.exec())
+
+def button1_action(window):
+    process = QProcess()  
+    process.start("cmd", ["/c", "ipconfig", "/all"])
+    process.waitForFinished()
+    output = process.readAllStandardOutput().data().decode('windows-1252')
+    window.textEdit.append(">>>IP Configuration\n")
+    match = re.search(r"(Description.*?:.*)", output)
+    if match:
+        description = match.group(1)
+        window.textEdit.append(description)
+    match = re.search(r"(DHCP Enabled.*?:.*)", output)
+    if match:
+        dhcp = match.group(1)
+        window.textEdit.append(dhcp)
+    match = re.search(r"(IPv4 Address.*?:.*)", output)
+    if match:
+        address = match.group(1)
+        window.textEdit.append(address)
     
+def button2_action(window):
+    window.textEdit.append(">>>Proxy Configuration\n")
+    proxies = requests.utils.get_environ_proxies("http://example.com")
+    if proxies:
+        for protocol, proxy in proxies.items():
+            try:
+                response = requests.get("http://ipinfo.io/json", proxies={protocol: proxy}, timeout=5)
+                if response.status_code == 200:
+                    window.textEdit.append(f"Proxy is active: {proxy}\n")
+                    window.textEdit.append("Proxy's public IP and port:", proxy + "\n")
+            except Exception as e:
+                window.textEdit.append(f"Failed to connect using proxy {proxy}: {e}\n")
+    else:
+        window.textEdit.append("No proxy detected.\n")
+
+def button3_action(window):
+    system = platform.system()
+    version = platform.version()
+    window.textEdit.append(">>>Hardware Configuration\n")
+    window.textEdit.append("System version: " + system + " " + version + "\n")
+    processor = str(os.cpu_count())
+    window.textEdit.append("CPU cores: "+ processor + "\n")
+    memory = str(round(psutil.virtual_memory().total/(1024.**3)))
+    window.textEdit.append("Total RAM: "+ memory + "GB\n")
+
+def button4_action(window):
+    window.textEdit.append(">>>BIOS Version\n")
+    print(sys.platform)
+    if sys.platform == 'win32':            
+        process = QProcess()  
+        process.start("systeminfo.exe")
+        process.waitForFinished()
+        output = process.readAllStandardOutput().data().decode('windows-1252')
+        match = re.search(r"(BIOS Version:*?:.*)", output)
+        if match:
+            version = match.group(1)
+            window.textEdit.append(version + "\n")
+    else:
+        process = QProcess()  
+        process.start("dmidecode --string bios-version", universal_newlines=True, shell=True) #untested
+        process.waitForFinished()
+        output = process.readAllStandardOutput().data().decode('utf-8')
+        window.textEdit.append(output + "\n")
+    
+def button5_action(window):
+    window.textEdit.append(">>>Hostname\n")
+    window.textEdit.append(socket.gethostname() + "\n")
+
 if __name__ == "__main__":
     print("Program initialized.")
     main()
+    

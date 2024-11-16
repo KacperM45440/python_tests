@@ -182,6 +182,112 @@ class Plane:
         denominator = math.sqrt(self.a**2 + self.b**2 + self.c**2)
         return numerator / denominator
     
+
+class Buttons:
+    def button1_action(window):
+        process = QProcess()  
+        process.start("cmd", ["/c", "ipconfig", "/all"])
+        process.waitForFinished()
+        output = process.readAllStandardOutput().data().decode('windows-1252')
+
+        ip_string = ">>>IP Configuration\n"
+        window.textEdit.append(ip_string)
+        print(ip_string)
+        
+        match = re.search(r"(Description.*?:.*)", output)
+        if match:
+            description = match.group(1)
+            window.textEdit.append(description)
+            print(description)
+        match = re.search(r"(DHCP Enabled.*?:.*)", output)
+        if match:
+            dhcp = match.group(1)
+            window.textEdit.append(dhcp)
+            print(dhcp)
+        match = re.search(r"(IPv4 Address.*?:.*)", output)
+        if match:
+            address = match.group(1)
+            window.textEdit.append(address)
+            print(address)
+        
+    def button2_action(window):
+        proxy_string = ">>>Proxy Configuration\n"
+        window.textEdit.append(proxy_string)
+        print(proxy_string)
+        
+        proxies = requests.utils.get_environ_proxies("http://example.com")
+        if proxies:
+            for protocol, proxy in proxies.items():
+                try:
+                    response = requests.get("http://ipinfo.io/json", proxies={protocol: proxy}, timeout=5)
+                    if response.status_code == 200:
+                        response1_string = f"Proxy is active: {proxy}\n"
+                        response2_string = "Proxy's public IP and port:", proxy + "\n"
+                        window.textEdit.append(response1_string)
+                        window.textEdit.append(response2_string)
+                        print(response1_string)
+                        print(response2_string)
+                except Exception as e:
+                    exception_string = f"Failed to connect using proxy {proxy}: {e}\n"
+                    window.textEdit.append(exception_string)
+                    print(exception_string)
+        else:
+            noproxy_string = "No proxy detected.\n"
+            window.textEdit.append("No proxy detected.\n")
+            print("No proxy detected.\n")
+
+    def button3_action(window):
+        system = platform.system()
+        version = platform.version()
+        processor = str(os.cpu_count())
+        memory = str(round(psutil.virtual_memory().total/(1024.**3)))
+
+        hardware_string = ">>>Hardware Configuration\n"
+        system_string = "System version: " + system + " " + version + "\n"
+        cpu_string = "CPU cores: "+ processor + "\n"
+        ram_string = "Total RAM: "+ memory + "GB\n"
+        window.textEdit.append(hardware_string)
+        window.textEdit.append(system_string)
+        window.textEdit.append(cpu_string)
+        window.textEdit.append(ram_string)
+        print(hardware_string)
+        print(system_string)
+        print(cpu_string)
+        print(ram_string)
+
+    def button4_action(window):
+        bios_string = ">>>BIOS Version\n"
+        window.textEdit.append(bios_string)
+        print(bios_string)
+        
+        if sys.platform == 'win32':            
+            process = QProcess()  
+            process.start("systeminfo.exe")
+            process.waitForFinished()
+            output = process.readAllStandardOutput().data().decode('windows-1252')
+            match = re.search(r"(BIOS Version:*?:.*)", output)
+            if match:
+                version = match.group(1)
+                version_string = version + "\n"
+                window.textEdit.append(version_string)
+                print(version_string)
+        else:
+            process = QProcess()  
+            process.start("dmidecode --string bios-version", universal_newlines=True, shell=True) #untested
+            process.waitForFinished()
+            output = process.readAllStandardOutput().data().decode('utf-8')
+            output_string = output + "\n"
+            window.textEdit.append(output_string)
+            print(output_string)
+        
+    def button5_action(window):
+        hostname_string = ">>>Hostname\n"
+        socket_string = socket.gethostname() + "\n"
+        window.textEdit.append(hostname_string)
+        window.textEdit.append(socket_string)
+        print(hostname_string)
+        print(socket_string)
+
 def main():
     app = QApplication(sys.argv)
     window = QWidget()
@@ -237,15 +343,15 @@ def main():
                      'padding-right: 7px; }'
                      )
     pushButton1 = QPushButton("IPv4")
-    pushButton1.pressed.connect(lambda: button1_action(window))
+    pushButton1.pressed.connect(lambda: Buttons.button1_action(window))
     pushButton2 = QPushButton("Proxy")
-    pushButton2.pressed.connect(lambda: button2_action(window))
+    pushButton2.pressed.connect(lambda: Buttons.button2_action(window))
     pushButton3 = QPushButton("OS + Hardware")
-    pushButton3.pressed.connect(lambda: button3_action(window))
+    pushButton3.pressed.connect(lambda: Buttons.button3_action(window))
     pushButton4 = QPushButton("BIOS version")
-    pushButton4.pressed.connect(lambda: button4_action(window))
+    pushButton4.pressed.connect(lambda: Buttons.button4_action(window))
     pushButton5 = QPushButton("Hostname")
-    pushButton5.pressed.connect(lambda: button5_action(window))
+    pushButton5.pressed.connect(lambda: Buttons.button5_action(window))
 
     groupButtons = QVBoxLayout()
     groupButtons.addWidget(pushButton1)
@@ -265,75 +371,34 @@ def main():
     window.show()
     window.setLayout(grid)
     sys.exit(app.exec())
-
-def button1_action(window):
-    process = QProcess()  
-    process.start("cmd", ["/c", "ipconfig", "/all"])
-    process.waitForFinished()
-    output = process.readAllStandardOutput().data().decode('windows-1252')
-    window.textEdit.append(">>>IP Configuration\n")
-    match = re.search(r"(Description.*?:.*)", output)
-    if match:
-        description = match.group(1)
-        window.textEdit.append(description)
-    match = re.search(r"(DHCP Enabled.*?:.*)", output)
-    if match:
-        dhcp = match.group(1)
-        window.textEdit.append(dhcp)
-    match = re.search(r"(IPv4 Address.*?:.*)", output)
-    if match:
-        address = match.group(1)
-        window.textEdit.append(address)
     
-def button2_action(window):
-    window.textEdit.append(">>>Proxy Configuration\n")
-    proxies = requests.utils.get_environ_proxies("http://example.com")
-    if proxies:
-        for protocol, proxy in proxies.items():
-            try:
-                response = requests.get("http://ipinfo.io/json", proxies={protocol: proxy}, timeout=5)
-                if response.status_code == 200:
-                    window.textEdit.append(f"Proxy is active: {proxy}\n")
-                    window.textEdit.append("Proxy's public IP and port:", proxy + "\n")
-            except Exception as e:
-                window.textEdit.append(f"Failed to connect using proxy {proxy}: {e}\n")
-    else:
-        window.textEdit.append("No proxy detected.\n")
-
-def button3_action(window):
-    system = platform.system()
-    version = platform.version()
-    window.textEdit.append(">>>Hardware Configuration\n")
-    window.textEdit.append("System version: " + system + " " + version + "\n")
-    processor = str(os.cpu_count())
-    window.textEdit.append("CPU cores: "+ processor + "\n")
-    memory = str(round(psutil.virtual_memory().total/(1024.**3)))
-    window.textEdit.append("Total RAM: "+ memory + "GB\n")
-
-def button4_action(window):
-    window.textEdit.append(">>>BIOS Version\n")
-    print(sys.platform)
-    if sys.platform == 'win32':            
-        process = QProcess()  
-        process.start("systeminfo.exe")
-        process.waitForFinished()
-        output = process.readAllStandardOutput().data().decode('windows-1252')
-        match = re.search(r"(BIOS Version:*?:.*)", output)
-        if match:
-            version = match.group(1)
-            window.textEdit.append(version + "\n")
-    else:
-        process = QProcess()  
-        process.start("dmidecode --string bios-version", universal_newlines=True, shell=True) #untested
-        process.waitForFinished()
-        output = process.readAllStandardOutput().data().decode('utf-8')
-        window.textEdit.append(output + "\n")
-    
-def button5_action(window):
-    window.textEdit.append(">>>Hostname\n")
-    window.textEdit.append(socket.gethostname() + "\n")
-
+def command_line_args(args):
+    app = QApplication(sys.argv)
+    window = QWidget()
+    window.textEdit = QTextEdit()
+    for arg in args:
+        if arg == '-button1':
+            Buttons.button1_action(window)
+        if arg == '-button2':
+            Buttons.button2_action(window)
+        if arg == '-button3':
+            Buttons.button3_action(window)
+        if arg == '-button4':
+            Buttons.button4_action(window)
+        if arg == '-button5':
+            Buttons.button5_action(window)
+        if arg == 'help' or arg == '-help' or arg == '/help':
+            print("Available commands (you can use multiple):")
+            print("-button1 | See IPv4 configuration of computer")
+            print("-button2 | Check availability of proxy")
+            print("-button3 | See computer configuration")
+            print("-button4 | Check BIOS version")
+            print("-button5 | See computer name")    
+                  
 if __name__ == "__main__":
     print("Program initialized.")
+    if (len(sys.argv) > 1):
+        command_line_args(sys.argv)
+        sys.exit()   
     main()
     

@@ -8,6 +8,7 @@ import socket
 import requests
 import multiprocessing
 import psutil
+import pytest
 
 from collections import defaultdict
 from PyQt6.QtWidgets import *
@@ -290,7 +291,7 @@ class Buttons:
 
 def set_window_properties(window):
     window.setWindowTitle("Computer Info Box")
-
+    window.setGeometry(10, 10, 640, 512)
     window.move(500, 200)
     window.setStyleSheet(
         "background-color: #CEDEFF;"
@@ -354,8 +355,15 @@ def set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window):
     grid.addWidget(groupBoxText, 1, 0)
     window.show()
     window.setLayout(grid)
-    
-def main():
+
+def test_window():
+    app, window = main(True)
+    assert 640 == window.size().width()
+    assert 512 == window.size().height()
+    assert "#cedeff" == window.palette().window().color().name()
+    assert "Segoe UI" == window.textEdit.font().family()
+
+def main(test):
     app = QApplication(sys.argv)
     window = QWidget()
     grid = QGridLayout()
@@ -369,17 +377,20 @@ def main():
     set_window_properties(window)
     set_textbox_properties(groupBoxText, groupText, window)
     set_button_properties(groupBoxButtons, groupButtons, window)
-    set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window)
+    set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window)  
     
     sys._excepthook = sys.excepthook 
     def exception_hook(exctype, value, traceback):
         print(exctype, value, traceback)
         sys._excepthook(exctype, value, traceback) 
         sys.exit(1) 
-    sys.excepthook = exception_hook 
-        
+    sys.excepthook = exception_hook
+
+    if test:
+        return app, window
+
     sys.exit(app.exec())
-    
+
 def command_line_args(args):
     app = QApplication(sys.argv)
     window = QWidget()
@@ -408,5 +419,5 @@ if __name__ == "__main__":
     if (len(sys.argv) > 1):
         command_line_args(sys.argv)
         sys.exit()   
-    main()
+    main(False)
     

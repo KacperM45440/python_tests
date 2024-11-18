@@ -288,26 +288,15 @@ class Buttons:
         print(hostname_string)
         print(socket_string)
 
-def main():
-    app = QApplication(sys.argv)
-    window = QWidget()
+def set_window_properties(window):
     window.setWindowTitle("Computer Info Box")
 
     window.move(500, 200)
     window.setStyleSheet(
         "background-color: #CEDEFF;"
     )
-    grid = QGridLayout()
 
-    sys._excepthook = sys.excepthook 
-    def exception_hook(exctype, value, traceback):
-        print(exctype, value, traceback)
-        sys._excepthook(exctype, value, traceback) 
-        sys.exit(1) 
-    sys.excepthook = exception_hook 
-
-    ### Text box
-    groupBoxText = QGroupBox("Output")
+def set_textbox_properties(groupBoxText, groupText, window):
     groupBoxText.setStyleSheet(
                      'QGroupBox {'
                      'border: 1px solid #F75A85;'
@@ -319,18 +308,16 @@ def main():
                      'padding-left: 7px;'
                      'padding-right: 7px; }'
                      )
-    window.textEdit = QTextEdit()  
+     
     window.textEdit.setStyleSheet(
                     'QTextEdit {'
                     'border: 0;}'
                     )
     window.textEdit.setReadOnly(True)
-    groupText = QVBoxLayout()
     groupText.addWidget(window.textEdit)
     groupBoxText.setLayout(groupText)
 
-    ### Button box
-    groupBoxButtons = QGroupBox("Actions")
+def set_button_properties(groupBoxButtons, groupButtons, window):
     groupBoxButtons.setStyleSheet(
                      'QGroupBox {'
                      'border: 1px solid #F75A85;'
@@ -352,8 +339,7 @@ def main():
     pushButton4.pressed.connect(lambda: Buttons.button4_action(window))
     pushButton5 = QPushButton("Hostname")
     pushButton5.pressed.connect(lambda: Buttons.button5_action(window))
-
-    groupButtons = QVBoxLayout()
+    
     groupButtons.addWidget(pushButton1)
     groupButtons.addWidget(pushButton2)
     groupButtons.addWidget(pushButton3)
@@ -361,15 +347,37 @@ def main():
     groupButtons.addWidget(pushButton5)
     groupBoxButtons.setLayout(groupButtons)
 
-    ### Set layout
-    table = QTableWidget()
+def set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window):
     table.setRowCount(3)
     table.setColumnCount(3)
     grid.addWidget(groupBoxButtons, 1, 1)
     grid.addWidget(groupBoxText, 1, 0)
-
     window.show()
     window.setLayout(grid)
+    
+def main():
+    app = QApplication(sys.argv)
+    window = QWidget()
+    grid = QGridLayout()
+    groupBoxText = QGroupBox("Output")
+    window.textEdit = QTextEdit()
+    groupText = QVBoxLayout()
+    groupBoxButtons = QGroupBox("Actions")
+    groupButtons = QVBoxLayout()
+    table = QTableWidget()
+    
+    set_window_properties(window)
+    set_textbox_properties(groupBoxText, groupText, window)
+    set_button_properties(groupBoxButtons, groupButtons, window)
+    set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window)
+    
+    sys._excepthook = sys.excepthook 
+    def exception_hook(exctype, value, traceback):
+        print(exctype, value, traceback)
+        sys._excepthook(exctype, value, traceback) 
+        sys.exit(1) 
+    sys.excepthook = exception_hook 
+        
     sys.exit(app.exec())
     
 def command_line_args(args):

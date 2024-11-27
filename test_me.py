@@ -190,6 +190,7 @@ class Buttons:
         process.start("cmd", ["/c", "ipconfig", "/all"])
         process.waitForFinished()
         output = process.readAllStandardOutput().data().decode('windows-1252')
+        data_array = []
 
         ip_string = ">>>IP Configuration\n"
         window.textEdit.append(ip_string)
@@ -197,19 +198,27 @@ class Buttons:
         
         match = re.search(r"(Description.*?:.*)", output)
         if match:
-            description = match.group(1)
+            description = match.group(1).strip()
             window.textEdit.append(description)
             print(description)
+            data_array.append(description)
         match = re.search(r"(DHCP Enabled.*?:.*)", output)
         if match:
-            dhcp = match.group(1)
+            dhcp = match.group(1).strip()
             window.textEdit.append(dhcp)
             print(dhcp)
+            data_array.append(dhcp)
         match = re.search(r"(IPv4 Address.*?:.*)", output)
         if match:
-            address = match.group(1)
+            address = match.group(1).strip()
             window.textEdit.append(address)
             print(address)
+            data_array.append(address)
+
+        window.textEdit.append("")
+        print("")
+
+        return data_array
         
     def button2_action(window):
         proxy_string = ">>>Proxy Configuration\n"
@@ -268,7 +277,7 @@ class Buttons:
             output = process.readAllStandardOutput().data().decode('windows-1252')
             match = re.search(r"(BIOS Version:*?:.*)", output)
             if match:
-                version = match.group(1)
+                version = match.group(1).strip()
                 version_string = version + "\n"
                 window.textEdit.append(version_string)
                 print(version_string)
@@ -362,6 +371,8 @@ def test_window():
     assert 512 == window.size().height()
     assert "#cedeff" == window.palette().window().color().name()
     assert "Segoe UI" == window.textEdit.font().family()
+    assert 'Description . . . . . . . . . . . : Microsoft Wi-Fi Direct Virtual Adapter #3' == Buttons.button1_action(window)[0] #Laptop
+    assert 'DHCP Enabled. . . . . . . . . . . : Yes' == Buttons.button1_action(window)[1] #sprawdzic bez internetu
 
 def main(test):
     app = QApplication(sys.argv)
@@ -416,7 +427,7 @@ def command_line_args(args):
                   
 if __name__ == "__main__":
     print("Program initialized.")
-    if (len(sys.argv) > 1):
+    if len(sys.argv) > 1:
         command_line_args(sys.argv)
         sys.exit()   
     main(False)

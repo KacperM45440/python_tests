@@ -1,4 +1,4 @@
-name: Python tests autobuilding
+name: Autotesting
 
 on:
   schedule:
@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run unit tests
-        run: pytest test_window.py
+        run: pytest test_me.py
 
   build-and-test-app:
     needs: test
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build .exe
         run: |
-          pyinstaller --onefile main.py --name ComputerInfoApp
+          pyinstaller --onefile test_me.py --name ComputerInfoApp
 
       - name: Test built app
         run: |

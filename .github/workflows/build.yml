@@ -1,4 +1,4 @@
-name: Python tests autobuilding
+name: Autobuilding
 
 on:
   schedule:
@@ -28,7 +28,7 @@ jobs:
 
       - name: Build .exe
         run: |
-          pyinstaller --onefile main.py --name ComputerInfoApp
+          pyinstaller --onefile test_me.py --name ComputerInfoApp
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3

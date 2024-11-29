@@ -10,6 +10,7 @@ import multiprocessing
 import psutil
 import pytest
 
+from urllib import request
 from collections import defaultdict
 from PyQt6.QtWidgets import *
 from PyQt6.QtGui import *
@@ -190,33 +191,31 @@ class Buttons:
         process.start("cmd", ["/c", "ipconfig", "/all"])
         process.waitForFinished()
         output = process.readAllStandardOutput().data().decode('windows-1252')
-        data_array = []
 
         ip_string = ">>>IP Configuration\n"
         window.textEdit.append(ip_string)
         print(ip_string)
+
+        data_array = []
         
         match = re.search(r"(Description.*?:.*)", output)
         if match:
-            description = match.group(1).strip()
+            description = match.group(1)
             window.textEdit.append(description)
             print(description)
-            data_array.append(description)
+            data_array.append(description.strip())
         match = re.search(r"(DHCP Enabled.*?:.*)", output)
         if match:
-            dhcp = match.group(1).strip()
+            dhcp = match.group(1)
             window.textEdit.append(dhcp)
             print(dhcp)
-            data_array.append(dhcp)
+            data_array.append(dhcp.strip())
         match = re.search(r"(IPv4 Address.*?:.*)", output)
         if match:
-            address = match.group(1).strip()
+            address = match.group(1)
             window.textEdit.append(address)
             print(address)
-            data_array.append(address)
-
-        window.textEdit.append("")
-        print("")
+            data_array.append(address.strip())
 
         return data_array
         
@@ -224,6 +223,8 @@ class Buttons:
         proxy_string = ">>>Proxy Configuration\n"
         window.textEdit.append(proxy_string)
         print(proxy_string)
+
+        data_array = []
         
         proxies = requests.utils.get_environ_proxies("http://example.com")
         if proxies:
@@ -237,14 +238,20 @@ class Buttons:
                         window.textEdit.append(response2_string)
                         print(response1_string)
                         print(response2_string)
+                        data_array.append(response1_string.strip())
+                        data_array.append(response2_string.strip())
                 except Exception as e:
                     exception_string = f"Failed to connect using proxy {proxy}: {e}\n"
                     window.textEdit.append(exception_string)
                     print(exception_string)
+                    data_array.append(exception_string.strip())
         else:
             noproxy_string = "No proxy detected.\n"
             window.textEdit.append("No proxy detected.\n")
             print("No proxy detected.\n")
+            data_array.append(noproxy_string.strip())
+
+        return data_array        
 
     def button3_action(window):
         system = platform.system()
@@ -252,6 +259,8 @@ class Buttons:
         processor = str(os.cpu_count())
         memory = str(round(psutil.virtual_memory().total/(1024.**3)))
 
+        data_array = []
+        
         hardware_string = ">>>Hardware Configuration\n"
         system_string = "System version: " + system + " " + version + "\n"
         cpu_string = "CPU cores: "+ processor + "\n"
@@ -264,11 +273,18 @@ class Buttons:
         print(system_string)
         print(cpu_string)
         print(ram_string)
+        data_array.append(system_string.strip())
+        data_array.append(cpu_string.strip())
+        data_array.append(ram_string.strip())
+
+        return data_array
 
     def button4_action(window):
         bios_string = ">>>BIOS Version\n"
         window.textEdit.append(bios_string)
         print(bios_string)
+
+        data_array = []
         
         if sys.platform == 'win32':            
             process = QProcess()  
@@ -281,6 +297,7 @@ class Buttons:
                 version_string = version + "\n"
                 window.textEdit.append(version_string)
                 print(version_string)
+                data_array.append(version_string.strip())
         else:
             process = QProcess()  
             process.start("dmidecode --string bios-version", universal_newlines=True, shell=True) #untested
@@ -289,14 +306,23 @@ class Buttons:
             output_string = output + "\n"
             window.textEdit.append(output_string)
             print(output_string)
+            data_array.append(output_string.strip())
+
+        return data_array
         
     def button5_action(window):
         hostname_string = ">>>Hostname\n"
         socket_string = socket.gethostname() + "\n"
+
+        data_array = []
+        
         window.textEdit.append(hostname_string)
         window.textEdit.append(socket_string)
         print(hostname_string)
         print(socket_string)
+        data_array.append(socket_string.strip())
+
+        return data_array
 
 def set_window_properties(window):
     window.setWindowTitle("Computer Info Box")
@@ -365,14 +391,27 @@ def set_layout_properties(groupBoxButtons, groupBoxText, table, grid, window):
     window.show()
     window.setLayout(grid)
 
+def check_connection():
+    try:
+        request.urlopen('https://8.8.4.4', timeout=1)
+        return True
+    except request.URLError as err: 
+        return False
+
 def test_window():
     app, window = main(True)
+    assert True == check_connection()
     assert 640 == window.size().width()
     assert 512 == window.size().height()
-    assert "#cedeff" == window.palette().window().color().name()
-    assert "Segoe UI" == window.textEdit.font().family()
-    assert 'Description . . . . . . . . . . . : Microsoft Wi-Fi Direct Virtual Adapter #3' == Buttons.button1_action(window)[0] #Laptop
-    assert 'DHCP Enabled. . . . . . . . . . . : Yes' == Buttons.button1_action(window)[1] #sprawdzic bez internetu
+    assert '#cedeff' == window.palette().window().color().name()
+    assert 'Segoe UI' == window.textEdit.font().family()
+#    assert 'Description . . . . . . . . . . . : Microsoft Wi-Fi Direct Virtual Adapter #3' == Buttons.button1_action(window)[0] #Laptop
+    assert 'Description . . . . . . . . . . . : Intel(R) Ethernet Controller (3) I225-V #2' == Buttons.button1_action(window)[0] #Komputer
+    assert 'DHCP Enabled. . . . . . . . . . . : Yes' == Buttons.button1_action(window)[1]
+    assert 'No proxy detected.' == Buttons.button2_action(window)[0]
+    assert ['System version: Windows 10.0.19045', 'CPU cores: 20', 'Total RAM: 32GB'] == Buttons.button3_action(window) #Komputer
+    assert 'BIOS Version:              American Megatrends International, LLC. A.J0, 15.08.2024' == Buttons.button4_action(window)[0] #Komputer
+    assert 'DESKTOP-9921IU8' == Buttons.button5_action(window)[0] #Komputer
 
 def main(test):
     app = QApplication(sys.argv)
